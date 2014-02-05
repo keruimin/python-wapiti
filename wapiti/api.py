@@ -189,7 +189,7 @@ _wapiti.api_add_train_seq.argtypes = [
 # handle the conversion to python string and make sure the c-allocated
 # data is freed.
 _wapiti.api_label_seq.argtypes = [
-    ctypes.POINTER(ModelType), ctypes.c_char_p, ctypes.c_bool]
+    ctypes.POINTER(ModelType), ctypes.c_char_p, ctypes.c_bool, ctypes.c_bool, ctypes.c_bool]
 _wapiti.api_label_seq.restype = ctypes.POINTER(ctypes.c_char)
 
 _libc.free.argtypes = [ctypes.c_void_p]
@@ -315,7 +315,7 @@ class Model:
                 fp = PyFile_AsFile(py_f)
                 _wapiti.api_save_model(self._model, fp)
 
-    def label_sequence(self, lines, include_input=False):
+    def label_sequence(self, lines, include_input=False, include_sproba=False, include_tproba=False):
         """
         Accepts a string of BIO-formatted lines and returns a column
         of labels.
@@ -328,7 +328,7 @@ class Model:
         """
         if isinstance(lines, six.text_type):
             lines = lines.encode(self.encoding)
-        cp = _wapiti.api_label_seq(self._model, lines, include_input)
+        cp = _wapiti.api_label_seq(self._model, lines, include_input, include_sproba, include_tproba)
 
         # Convert to python string and free the c-allocated data
         labeled = ctypes.string_at(cp)

@@ -126,7 +126,7 @@ mdl_t *api_load_model(char *filename, opt_t *options) {
  * returns a column of labels. If the input flag is true the input
  * columns are also included in the output string.
  */
-char *api_label_seq(mdl_t *mdl, char *lines, bool input) {
+char *api_label_seq(mdl_t *mdl, char *lines, bool input, bool sproba, bool tproba) {
     size_t outsize = 0;
     // If the output string should contain the input,
     // it needs to be at least that big
@@ -157,7 +157,7 @@ char *api_label_seq(mdl_t *mdl, char *lines, bool input) {
         tag_nbviterbi(mdl, seq, N, out, scs, psc);
 
     // Allocate some intial memory for the output string.
-    outsize += 5 * T * N;
+    outsize += 30 * T * N;
     char *lblseq = xmalloc(outsize);
     const char *lblstr;
     size_t rowsize;
@@ -165,6 +165,11 @@ char *api_label_seq(mdl_t *mdl, char *lines, bool input) {
 
 	// Build the output string
     for (uint32_t n = 0; n < N; n++) {
+      if (sproba) {
+          char sstrproba[15];
+          sprintf(sstrproba, "%.8f", scs[n]);
+          pos += snprintf(lblseq+pos, outsize-pos, "### %s\n", sstrproba);
+      }
       for (int t = 0; t < T; t++) {
         lblstr = qrk_id2str(lbls, out[t * N + n]);
         // Size: label + \n + \0
@@ -180,7 +185,15 @@ char *api_label_seq(mdl_t *mdl, char *lines, bool input) {
         if (input) {
           pos += snprintf(lblseq+pos, outsize-pos, "%s\t", raw->lines[t]);
         }
-        pos += snprintf(lblseq+pos, outsize-pos, "%s\n", lblstr);
+        if (tproba) {
+            pos += snprintf(lblseq+pos, outsize-pos, "%s\t", lblstr);
+            char strproba[15];
+            sprintf(strproba, "%.8f", psc[t * N +n]);
+            pos += snprintf(lblseq+pos, outsize-pos, "%s\n", strproba);
+        }
+        else {
+            pos += snprintf(lblseq+pos, outsize-pos, "%s\n", lblstr);
+        }
       }
       if(N > 1 && n < N - 1){
         pos += snprintf(lblseq+pos, outsize-pos, "\n");
